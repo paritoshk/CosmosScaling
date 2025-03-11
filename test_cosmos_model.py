@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def test_model_loading():
     """Test loading the Cosmos model"""
-    model_id = "nvidia/Cosmos-1.0-Autoregressive-5B-Video2World"
+    model_id = "/workspace/models/Cosmos"
     
     logger.info(f"Testing model loading: {model_id}")
     

@@ -11,18 +11,41 @@ logger = logging.getLogger(__name__)
 def install_dependencies():
     """Install all required dependencies for Cosmos"""
     try:
+        logger.info("Installing prerequisite packages...")
+        # Install Cython first
+        subprocess.run(["pip", "install", "--no-cache-dir", "Cython"], check=True)
+        
+        # Update pip
+        subprocess.run(["pip", "install", "--upgrade", "pip"], check=True)
+        
+        # Install system dependencies
+        try:
+            subprocess.run(["apt-get", "update"], check=True)
+            subprocess.run(["apt-get", "install", "-y", "libsndfile1", "ffmpeg"], check=True)
+        except Exception as e:
+            logger.warning(f"Could not install system dependencies: {str(e)}. Continuing anyway.")
+        
         logger.info("Installing NeMo and other dependencies...")
         
-        # Install NeMo Framework and core dependencies
+        # Install essential packages first
         subprocess.run([
             "pip", "install", "--no-cache-dir",
-            "nemo_toolkit[all]>=1.20.0",
             "pytorch-lightning>=2.0.0",
-            "hydra-core>=1.3.2",
-            "omegaconf>=2.3.0",
+            "hydra-core>=1.3.2", 
+            "omegaconf>=2.3.0"
+        ], check=True)
+        
+        # Install specific problematic packages with specific flags
+        subprocess.run(["pip", "install", "--no-cache-dir", "youtokentome>=1.0.6"], check=True)
+        subprocess.run(["pip", "install", "--no-cache-dir", "sentencepiece>=0.1.97"], check=True)
+        
+        # Install NeMo toolkit
+        subprocess.run(["pip", "install", "--no-cache-dir", "nemo_toolkit[all]>=1.20.0"], check=True)
+        
+        # Install remaining packages
+        subprocess.run([
+            "pip", "install", "--no-cache-dir",
             "transformers>=4.26.0",
-            "sentencepiece>=0.1.97",
-            "youtokentome>=1.0.6",
             "h5py>=3.7.0",
             "pyannote.audio>=2.1.1",
             "torchmetrics>=0.11.4",

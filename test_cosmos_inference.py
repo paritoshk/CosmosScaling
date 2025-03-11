@@ -1,165 +1,111 @@
 import os
-import torch
+import subprocess
 import logging
-import cv2
-import numpy as np
-import json
+import sys
+import shutil
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def extract_frames_from_video(video_path, num_frames=9):
-    """Extract frames from a video file"""
-    if not os.path.exists(video_path):
-        logger.error(f"Video file not found: {video_path}")
-        return []
-    
+def setup_environment():
+    """Setup the environment for Cosmos"""
     try:
-        cap = cv2.VideoCapture(video_path)
-        frames = []
+        # Install required packages
+        logger.info("Installing required packages...")
+        subprocess.run(
+            ["pip", "install", "--no-cache-dir", "imageio[ffmpeg]", "pyav", "iopath", "better_profanity", "peft", 
+             "git+https://github.com/NVlabs/Pytorch_Retinaface.git@b843f45"],
+            check=True
+        )
         
-        # Get video properties
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        # Set environment variables - use our already downloaded model
+        os.environ["HF_HOME"] = "/workspace/models"
         
-        logger.info(f"Video properties: {total_frames} frames, {fps} fps")
-        
-        # Calculate frame indices to extract
-        if total_frames <= num_frames:
-            indices = list(range(total_frames))
-        else:
-            # Evenly space the frames
-            indices = [int(i * total_frames / num_frames) for i in range(num_frames)]
-        
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                # Resize to 1024x640 as required by the model
-                frame = cv2.resize(frame, (1024, 640))
-                frames.append(frame)
-        
-        cap.release()
-        logger.info(f"Extracted {len(frames)} frames from video")
-        return frames
-    except Exception as e:
-        logger.error(f"Error extracting frames: {str(e)}")
-        return []
-
-def examine_model_dict(model_dict):
-    """Examine the model dictionary structure"""
-    logger.info(f"Model dictionary keys: {list(model_dict.keys())}")
-    
-    # Save model structure to a JSON file for easier analysis
-    with open("model_structure.json", "w") as f:
-        # Try to convert to JSON, handle special types
-        try:
-            structure = {}
-            for key, value in model_dict.items():
-                if isinstance(value, torch.Tensor):
-                    structure[key] = {
-                        "type": "tensor",
-                        "shape": list(value.shape),
-                        "dtype": str(value.dtype)
-                    }
-                elif isinstance(value, dict):
-                    structure[key] = {
-                        "type": "dict",
-                        "keys": list(value.keys())
-                    }
-                else:
-                    structure[key] = str(type(value))
-            
-            json.dump(structure, f, indent=2)
-            logger.info("Model structure saved to model_structure.json")
-        except Exception as e:
-            logger.error(f"Error saving model structure: {str(e)}")
-    
-    return structure
-
-def test_model_inference():
-    """Test model inference with a sample video"""
-    try:
-        # Extract frames from video
-        video_path = "sample_video.mp4"
-        frames = extract_frames_from_video(video_path)
-        
-        if not frames:
-            logger.error("Failed to extract frames from video")
-            return False
-        
-        # Preprocess the first frame as an example
-        frame = frames[0]
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_tensor = torch.from_numpy(frame_rgb).permute(2, 0, 1).float() / 255.0
-        frame_tensor = frame_tensor.unsqueeze(0).to("cuda")  # Add batch dimension
-        
-        # Load model
-        logger.info("Loading model dictionary...")
-        model_path = "/workspace/models/Cosmos/model.pt"
-        model_dict = torch.load(model_path, map_location="cuda")
-        logger.info("Model dictionary loaded successfully")
-        
-        # Examine model dictionary
-        structure = examine_model_dict(model_dict)
-        
-        # Try to find model weights or config
-        logger.info("Checking for model components...")
-        
-        # Check if there are any modules in the model dictionary
-        has_modules = False
-        for key, value in model_dict.items():
-            if isinstance(value, dict) and "state_dict" in value:
-                logger.info(f"Found state_dict in key: {key}")
-                has_modules = True
-            elif hasattr(value, "forward") or hasattr(value, "__call__"):
-                logger.info(f"Found callable object in key: {key}")
-                has_modules = True
-        
-        if not has_modules:
-            logger.warning("No callable modules found in model dictionary.")
-            logger.info("This appears to be just a weights file without architecture code.")
-            logger.info("We need to find the corresponding model architecture code from NVIDIA.")
-        
-        # Check for any parameters that might help identify the model
-        if "config" in model_dict:
-            logger.info(f"Model config: {model_dict['config']}")
-            
-        # Check if there are any Python files in the model directory
-        model_dir = "/workspace/models/Cosmos"
-        py_files = [f for f in os.listdir(model_dir) if f.endswith('.py')]
-        if py_files:
-            logger.info(f"Found Python files in model directory: {py_files}")
-            logger.info("These files may contain the model architecture code.")
-        
-        # Look for a README or other documentation
-        readme_files = [f for f in os.listdir(model_dir) if f.lower().startswith('readme')]
-        if readme_files:
-            for readme in readme_files:
-                logger.info(f"Found README file: {readme}")
-                with open(os.path.join(model_dir, readme), 'r') as f:
-                    logger.info(f"README contents: {f.read()}")
-        
-        # Log what we would do in a real inference
-        logger.info("In a complete implementation, we would:")
-        logger.info("1. Load the proper model architecture")
-        logger.info("2. Initialize with the weights from this file")
-        logger.info("3. Process the input video frames")
-        logger.info("4. Generate future frames")
-        logger.info("5. Return the output video")
-        
+        logger.info("Environment setup complete")
         return True
     except Exception as e:
-        logger.error(f"Error testing inference: {str(e)}")
+        logger.error(f"Error setting up environment: {str(e)}")
+        return False
+
+def clone_cosmos_repo():
+    """Clone the Cosmos repository"""
+    try:
+        logger.info("Cloning NVIDIA Cosmos repository...")
+        
+        # Check if directory exists already
+        if os.path.exists("/workspace/Cosmos"):
+            logger.info("Cosmos repository already exists, skipping clone")
+        else:
+            subprocess.run(
+                ["git", "clone", "https://github.com/NVIDIA/Cosmos.git", "/workspace/Cosmos"],
+                check=True
+            )
+        
+        # Change to the Cosmos directory
+        os.chdir("/workspace/Cosmos")
+        
+        # Pull large files
+        logger.info("Pulling sample input video...")
+        subprocess.run(
+            ["git", "lfs", "pull", "cosmos1/models/autoregressive/assets/v1p0/input.mp4"],
+            check=True
+        )
+        
+        logger.info("Cosmos repository setup complete")
+        return True
+    except Exception as e:
+        logger.error(f"Error cloning Cosmos repository: {str(e)}")
+        return False
+
+def run_inference():
+    """Run inference with the Cosmos model using the official script"""
+    try:
+        logger.info("Running inference with Cosmos model...")
+        
+        # Check and copy your sample video if it exists
+        if os.path.exists("/workspace/CosmosScaling/sample_video.mp4"):
+            shutil.copy("/workspace/CosmosScaling/sample_video.mp4", "/workspace/Cosmos/sample_video.mp4")
+            input_video = "sample_video.mp4"
+            logger.info(f"Using your custom video: {input_video}")
+        else:
+            input_video = "cosmos1/models/autoregressive/assets/v1p0/input.mp4"
+            logger.info(f"Using default video: {input_video}")
+        
+        # Create a symbolic link to your downloaded model within HF_HOME structure
+        os.makedirs("/workspace/models/models--nvidia--Cosmos-1.0-Autoregressive-5B-Video2World/snapshots", exist_ok=True)
+        model_link_dir = "/workspace/models/models--nvidia--Cosmos-1.0-Autoregressive-5B-Video2World/snapshots/latest"
+        
+        if not os.path.exists(model_link_dir):
+            os.symlink("/workspace/models/Cosmos", model_link_dir)
+            logger.info(f"Created symbolic link to your downloaded model at {model_link_dir}")
+        
+        # Run inference with the 5B Video2World model
+        subprocess.run([
+            "torchrun", "--nproc-per-node=1", 
+            "cosmos1/models/autoregressive/nemo/inference/video2world.py",
+            "--input_type", "video",
+            "--input_image_or_video_path", input_video,
+            "--prompt", "A detailed and realistic scene with natural motion",
+            "--ar_model_dir", "/workspace/models/Cosmos",
+            "--video_save_name", "/workspace/CosmosScaling/cosmos_generated_video.mp4"
+        ], check=True)
+        
+        logger.info("Inference completed successfully!")
+        logger.info("Generated video saved as /workspace/CosmosScaling/cosmos_generated_video.mp4")
+        return True
+    except Exception as e:
+        logger.error(f"Error running inference: {str(e)}")
         return False
 
 if __name__ == "__main__":
-    success = test_model_inference()
-    if success:
-        logger.info("Inference examination completed successfully")
+    logger.info("Starting Cosmos inference process...")
+    
+    if setup_environment() and clone_cosmos_repo():
+        success = run_inference()
+        if success:
+            logger.info("Process completed successfully!")
+        else:
+            logger.error("Process failed during inference")
     else:
-        logger.error("Inference examination failed")
+        logger.error("Failed to setup environment or clone repository")

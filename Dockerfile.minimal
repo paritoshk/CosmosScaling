@@ -1,0 +1,30 @@
+FROM nvcr.io/nvidia/pytorch:23.10-py3
+
+WORKDIR /workspace
+
+# Install basic dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    transformers \
+    huggingface_hub \
+    opencv-python \
+    numpy \
+    python-dotenv
+
+# Create directory for model offloading
+RUN mkdir -p /workspace/offload
+
+# Set up SSH for RunPod
+RUN mkdir -p /root/.ssh && \
+    chmod 700 /root/.ssh
+
+# Keep container running
+CMD ["bash", "-c", "tail -f /dev/null"] 

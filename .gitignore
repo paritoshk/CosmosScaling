@@ -1,0 +1,90 @@
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment and secrets
+.env
+.venv
+env/
+venv/
+ENV/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Model files
+*.pth
+*.pt
+*.bin
+*.onnx
+*.pb
+checkpoint/
+checkpoints/
+model/
+models/
+weights/
+offload/
+
+# Data
+data/
+datasets/
+*.csv
+*.tsv
+*.json
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# Logs
+logs/
+*.log
+lightning_logs/
+wandb/
+runs/
+
+# IDE
+.idea/
+.vscode/
+.ipynb_checkpoints/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# FastAPI/web specific
+static/output/
+static/uploads/
+temp/
+tmp/
+
+# Generated media
+*.mp4
+*.avi
+*.mov
+*.webm
+output_videos

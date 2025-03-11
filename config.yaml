@@ -1,0 +1,25 @@
+model:
+  id: "nvidia/Cosmos-1.0-Autoregressive-5B-Video2World"
+  device: "cuda"
+  offload_folder: "offload"
+  
+api:
+  host: "0.0.0.0"
+  port: 8000
+  
+video:
+  input_frames: 9
+  output_frames: 24
+  width: 1024
+  height: 640
+  fps: 30
+  
+image:
+  output_frames: 32
+  width: 1024
+  height: 640
+  fps: 30
+  
+parallelization:
+  batch_size: 1  # Can be increased based on available GPU memory
+  num_workers: 2 

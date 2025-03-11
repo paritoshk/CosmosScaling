@@ -1,0 +1,17 @@
+cosmos_inference/
+├── src/
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── routes.py
+│   ├── model/
+│   │   ├── __init__.py
+│   │   ├── cosmos_wrapper.py
+│   │   └── inference.py
+│   └── utils/
+│       ├── __init__.py
+│       └── video_processing.py
+├── tests/
+├── config.yaml
+├── Dockerfile
+└── requirements.txt 

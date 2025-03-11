@@ -83,7 +83,6 @@ temp/
 tmp/
 
 # Generated media
-*.mp4
 *.avi
 *.mov
 *.webm

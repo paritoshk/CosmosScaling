@@ -2,6 +2,7 @@ import os
 import subprocess
 import logging
 import sys
+import requests
 import shutil
 
 # Configure logging
@@ -19,6 +20,15 @@ def setup_environment():
             check=True
         )
         
+        # Install git-lfs
+        logger.info("Installing git-lfs...")
+        try:
+            subprocess.run(["apt-get", "update"], check=True)
+            subprocess.run(["apt-get", "install", "-y", "git-lfs"], check=True)
+            subprocess.run(["git", "lfs", "install"], check=True)
+        except Exception as e:
+            logger.warning(f"Could not install git-lfs: {str(e)}. Will download sample video directly.")
+        
         # Set environment variables - use our already downloaded model
         os.environ["HF_HOME"] = "/workspace/models"
         
@@ -26,6 +36,32 @@ def setup_environment():
         return True
     except Exception as e:
         logger.error(f"Error setting up environment: {str(e)}")
+        return False
+
+def download_sample_video():
+    """Download sample video directly"""
+    try:
+        logger.info("Downloading sample video directly...")
+        
+        # Create cosmos1 directory structure
+        os.makedirs("/workspace/Cosmos/cosmos1/models/autoregressive/assets/v1p0", exist_ok=True)
+        
+        # Sample video URL (we'll use a placeholder - you'd need to find the actual URL)
+        # This is just a placeholder URL for a random mp4
+        video_url = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        
+        # Video path
+        video_path = "/workspace/Cosmos/cosmos1/models/autoregressive/assets/v1p0/input.mp4"
+        
+        # Download the video
+        response = requests.get(video_url, stream=True)
+        with open(video_path, 'wb') as out_file:
+            shutil.copyfileobj(response.raw, out_file)
+        
+        logger.info(f"Sample video downloaded to {video_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error downloading sample video: {str(e)}")
         return False
 
 def clone_cosmos_repo():
@@ -45,12 +81,16 @@ def clone_cosmos_repo():
         # Change to the Cosmos directory
         os.chdir("/workspace/Cosmos")
         
-        # Pull large files
-        logger.info("Pulling sample input video...")
-        subprocess.run(
-            ["git", "lfs", "pull", "cosmos1/models/autoregressive/assets/v1p0/input.mp4"],
-            check=True
-        )
+        # Try to pull with git-lfs
+        try:
+            logger.info("Pulling sample input video with git-lfs...")
+            subprocess.run(
+                ["git", "lfs", "pull", "cosmos1/models/autoregressive/assets/v1p0/input.mp4"],
+                check=True
+            )
+        except Exception as e:
+            logger.warning(f"Could not pull with git-lfs: {str(e)}. Will download sample video directly.")
+            download_sample_video()
         
         logger.info("Cosmos repository setup complete")
         return True
@@ -71,14 +111,6 @@ def run_inference():
         else:
             input_video = "cosmos1/models/autoregressive/assets/v1p0/input.mp4"
             logger.info(f"Using default video: {input_video}")
-        
-        # Create a symbolic link to your downloaded model within HF_HOME structure
-        os.makedirs("/workspace/models/models--nvidia--Cosmos-1.0-Autoregressive-5B-Video2World/snapshots", exist_ok=True)
-        model_link_dir = "/workspace/models/models--nvidia--Cosmos-1.0-Autoregressive-5B-Video2World/snapshots/latest"
-        
-        if not os.path.exists(model_link_dir):
-            os.symlink("/workspace/models/Cosmos", model_link_dir)
-            logger.info(f"Created symbolic link to your downloaded model at {model_link_dir}")
         
         # Run inference with the 5B Video2World model
         subprocess.run([

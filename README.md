@@ -5,6 +5,7 @@
 ![Cosmos Banner](https://img.shields.io/badge/NVIDIA-Cosmos-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 ![Model](https://img.shields.io/badge/Model-5B%20Parameters-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-NVIDIA%20Open-orange?style=for-the-badge)
+![Education](https://developer.nvidia.com/blog/accelerate-custom-video-foundation-model-pipelines-with-new-nvidia-nemo-framework-capabilities/)
 
 ## 🚀 Project Overview
 
@@ -19,6 +20,8 @@ This project harnesses NVIDIA's Cosmos-1.0-Autoregressive-5B-Video2World model f
 ### 🖥️ RunPod Configuration
 
 For optimal performance with the Cosmos-1.0-Autoregressive-5B-Video2World model, we recommend:
+
+Using ```nvcr.io/nvidia/nemo:24.12``` version of NeMO since RunPod has outdated NVDA drivers. 
 
 | Component | Specification |
 |-----------|---------------|

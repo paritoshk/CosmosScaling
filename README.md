@@ -20,6 +20,7 @@ For the Cosmos-1.0-Autoregressive-5B-Video2World model, we selected:
 - **Storage**: 100GB+ SSD
 - **Container**: NVIDIA PyTorch container (latest) - `nvcr.io/nvidia/pytorch:23.10-py3`
 
+
 This configuration accommodates the model's significant VRAM requirements (41.3GB with offloading) as documented in NVIDIA's specifications.
 
 ### Container Setup
@@ -144,3 +145,47 @@ Based on our testing, we've designed the following system architecture:
 - [NVIDIA Cosmos GitHub](https://github.com/NVIDIA/Cosmos)
 - [Model Technical Paper](https://research.nvidia.com/publication/2025-01_cosmos-world-foundation-model-platform-physical-ai)
 - [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license)
+
+## Additional Notes for setting up the environment using NVIDIA's official container in RunPod
+
+This template uses NVIDIA's official container which has all the following pre-installed:
+NeMo Framework
+Megatron-LM
+transformer_engine
+All CUDA/cuDNN dependencies
+PyTorch Lightning
+Other required libraries
+Your A40 with 48GB VRAM is sufficient for running the 5B Cosmos models (which require ~40GB VRAM)
+Make sure RunPod's network allows outbound connections to Hugging Face for downloading models
+This template configuration will help you avoid all the dependency issues we encountered earlier!
+# NVIDIA NeMo for Cosmos Models
+
+This template includes the official NVIDIA NeMo container with all dependencies pre-installed
+for running Cosmos Autoregressive World Foundation Models.
+
+## Getting Started
+
+1. Clone the Cosmos repository:
+
+```
+cd /workspace
+git clone https://github.com/NVIDIA/Cosmos.git
+cd Cosmos
+```
+
+
+## Important Notes
+- Uses NVIDIA's official NeMo container with all dependencies pre-installed
+- Requires a Hugging Face access token to download models
+- Recommended GPU: A100-80GB or H100-80GB (minimum 40GB VRAM)
+3. Run inference:
+
+ 
+```
+torchrun --nproc-per-node=1 cosmos1/models/autoregressive/nemo/inference/video2world.py \
+--input_type video \
+--input_image_or_video_path /path/to/your/video.mp4 \
+--prompt "A detailed and realistic scene" \
+--ar_model_dir nvidia/Cosmos-1.0-Autoregressive-5B-Video2World \
+--video_save_name /workspace/generated_video.mp4
+```
